@@ -1,3 +1,4 @@
+#include <stdio.h>
 #import <string.h>
 #define MAX_DESC 50
 
@@ -17,7 +18,8 @@ typedef struct {
 int main()
 {
 
-    char* cmd;
+    char* cmd;scanf("%s",cmd);
+
     
     while(strcmp(cmd, "quit") != 0){
         //adiciona um processo(celula) a lista de processos
