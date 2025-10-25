@@ -1,5 +1,5 @@
 #include <stdio.h>
-#import <string.h>
+#include <string.h>
 #define MAX_DESC 50
 
 
@@ -7,13 +7,100 @@ typedef struct {
     int hh;
     int mm;
     int ss;
-} horario;
+} tempo;
 
 typedef struct {
     int prior;
-    horario chegada;
+    tempo chegada;
     char desc[MAX_DESC];
 } celula;
+
+void add(celula tarefa)
+{
+    //inserir código para adicionar processo aqui
+}
+
+void exec(char opcao)
+{
+    switch (opcao)
+    {
+        case 'p':
+        {
+            //inserir código para executar processo com maior prioridade aqui
+            break;
+        }
+
+        case 't':
+        {
+            //inserir código para executar processo com menor tempo aqui
+            break;
+        }
+
+        default: printf(
+            "Por favor, escolha uma opção válida!\n"
+            "-p: executar processo com maior prioridade\n"
+            "-t: executar processo com menor tempo\n"
+        );
+    }
+}
+
+void next(char opcao)
+{
+switch (opcao)
+    {
+        case 'p':
+        {
+            //inserir código para mostrar processo com maior prioridade aqui
+            break;
+        }
+
+        case 't':
+        {
+            //inserir código para mostrar processo com menor tempo aqui
+            break;
+        }
+
+        default: printf(
+            "Por favor, escolha uma opção válida!\n"
+            "-p: mostrar informações do processo com maior prioridade\n"
+            "-t: mostrar informações processo com menor tempo\n"
+        );
+    }
+}
+
+void change_prior(int anterior, int novo)
+{
+    //inserir código para mudar processo com prioridade aqui
+}
+
+void change_tempo(tempo anterior, tempo novo)
+{
+    //inserir código para mudar processo com tempo aqui
+}
+
+void print(char opcao)
+{
+    switch (opcao)
+    {
+        case 'p':
+        {
+            //inserir código para imprimir processos por prioridade aqui
+            break;
+        }
+
+        case 't':
+        {
+            //inserir código para imprimir processos por tempo aqui
+            break;
+        }
+
+        default: printf(
+            "Por favor, escolha uma opção válida!\n"
+            "-p: imprimir os processor em ordem decrescente de prioridade\n"
+            "-t: imprimir os processor em ordem crescente de horários\n"
+        );
+    }
+}
 
 int main()
 {
