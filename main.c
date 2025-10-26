@@ -14,10 +14,16 @@ typedef struct {
     tempo chegada;
     char desc[MAX_DESC];
 } celula;
+celula tarefas[100]; // vetor global de tarefas em ordem de prioridade
+celula *tarefas_tempo; // vetor global de tarefas em ordem de tempo
 
 void add(celula tarefa)
 {
-    //inserir código para adicionar processo aqui
+    scanf("%d", &tarefa.prior);
+    scanf("%d:%d:%d", &tarefa.tempo.hh, &tarefa.tempo.mm, &tarefa.tempo.ss);
+    scanf("%s", &tarefa.desc);
+
+    tarefas[tarefa.prior] = tarefa;
 }
 
 void exec(char opcao)
@@ -51,6 +57,17 @@ switch (opcao)
         case 'p':
         {
             //inserir código para mostrar processo com maior prioridade aqui
+            int prioridade_max = 99;
+            do{
+            if(tarefas[prioridade_max].desc != NULL){
+                printf("%d %d:%d:%d %s", tarefas[prioridade_max].prior, tarefas[prioridade_max].chegada.hh, tarefas[prioridade_max].chegada.mm, tarefas[prioridade_max].chegada.ss, tarefas[prioridade_max].desc);
+                printf("\n\n");
+                prioridade_max = NULL;
+            }else{
+            prioridade_max--;
+            }
+
+            }while(prioridade_max != NULL || prioridade_max >= 0);
             break;
         }
 
@@ -71,6 +88,10 @@ switch (opcao)
 void change_prior(int anterior, int novo)
 {
     //inserir código para mudar processo com prioridade aqui
+    // ex: troca de anterior=88 para novo=22...
+    tarefas[novo] = tarefas[anterior];
+    tarefas[anterior].desc[0] = '\0';
+    tarefas[novo].prior = novo;
 }
 
 void change_tempo(tempo anterior, tempo novo)
@@ -85,6 +106,12 @@ void print(char opcao)
         case 'p':
         {
             //inserir código para imprimir processos por prioridade aqui
+            for(int i = 99; i >= 0; i--){
+                if(tarefas[i].desc[0] != '\0'){
+                    printf("%d %d:%d:%d %s", tarefas[i].prior, tarefas[i].chegada.hh, tarefas[i].chegada.mm, tarefas[i].chegada.ss, tarefas[i].desc);
+                    printf("\n\n");
+                }
+            }
             break;
         }
 
@@ -105,7 +132,8 @@ void print(char opcao)
 int main()
 {
 
-    char* cmd;scanf("%s",cmd);
+    char* cmd;
+    scanf("%s",cmd);
 
     
     while(strcmp(cmd, "quit") != 0){
