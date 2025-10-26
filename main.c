@@ -14,8 +14,16 @@ typedef struct {
     tempo chegada;
     char desc[MAX_DESC];
 } celula;
+
+
 celula tarefas[100]; // vetor global de tarefas em ordem de prioridade
 celula *tarefas_tempo; // vetor global de tarefas em ordem de tempo
+
+int conversor_tempo(tempo t)
+{
+    return t.hh*3600 + t.mm*60 + t.ss;
+}
+
 
 void add(celula tarefa)
 {
@@ -25,6 +33,8 @@ void add(celula tarefa)
 
     tarefas[tarefa.prior] = tarefa;
 }
+
+
 
 void exec(char opcao)
 {
@@ -52,7 +62,7 @@ void exec(char opcao)
 
 void next(char opcao)
 {
-switch (opcao)
+    switch (opcao)
     {
         case 'p':
         {
@@ -85,7 +95,7 @@ switch (opcao)
     }
 }
 
-void change_prior(int anterior, int novo)
+void alterar_prior(int anterior, int novo)
 {
     //inserir código para mudar processo com prioridade aqui
     // ex: troca de anterior=88 para novo=22...
@@ -94,7 +104,7 @@ void change_prior(int anterior, int novo)
     tarefas[novo].prior = novo;
 }
 
-void change_tempo(tempo anterior, tempo novo)
+void alterar_tempo(tempo anterior, tempo novo)
 {
     //inserir código para mudar processo com tempo aqui
 }
@@ -140,7 +150,7 @@ int main()
         //adiciona um processo(celula) a lista de processos
         if(strcmp(cmd,"add") == 0)
         {
-
+            
         }
 
         /*executa um processo
