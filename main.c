@@ -20,7 +20,7 @@ celula *tarefas_tempo; // vetor global de tarefas em ordem de tempo
 void add(celula tarefa)
 {
     scanf("%d", &tarefa.prior);
-    scanf("%d:%d:%d", &tarefa.tempo.hh, &tarefa.tempo.mm, &tarefa.tempo.ss);
+    scanf("%d:%d:%d", &tarefa.chegada.hh, &tarefa.chegada.mm, &tarefa.chegada.ss);
     scanf("%s", &tarefa.desc);
 
     tarefas[tarefa.prior] = tarefa;
@@ -136,7 +136,7 @@ int main()
     scanf("%s",cmd);
 
     
-    while(strcmp(cmd, "quit") != 0){
+    do{
         //adiciona um processo(celula) a lista de processos
         if(strcmp(cmd,"add") == 0)
         {
@@ -181,7 +181,7 @@ int main()
         {
 
         }
-    }
+    }while(strcmp(cmd, "quit") != 0);
 
 
 }
