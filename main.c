@@ -59,7 +59,20 @@ void exec(celula tarefas[], char opcao)
     {
         case 'p':
         {
-            //inserir código para executar processo com maior prioridade aqui
+            int prioridade_max = 0;
+            for(int i = 0; i<=99; i++){
+                if(prioridades[i] > prioridade_max){
+                    prioridade_max = prioridades[i];
+                }
+            }
+            tarefas[prioridade_max].desc[0] = '\0';
+            tarefas[prioridade_max].prior = -1;
+            tarefas[prioridade_max].chegada.hh = 0;
+            tarefas[prioridade_max].chegada.mm = 0;
+            tarefas[prioridade_max].chegada.ss = 0;
+            
+            prioridades[prioridade_max] = 0;
+
             break;
         }
 
@@ -84,7 +97,12 @@ void next(celula tarefas[], char opcao)
         case 'p':
         {
             //inserir código para mostrar processo com maior prioridade aqui
-            int prioridade_max = 99;
+            int prioridade_max = 0;
+            for(int i = 0; i<=99; i++){
+                if(prioridades[i] > prioridade_max){
+                    prioridade_max = prioridades[i];
+                }
+            }
             do{
             if(tarefas[prioridade_max].desc != NULL){
                 printf("%d %d:%d:%d %s", tarefas[prioridade_max].prior, tarefas[prioridade_max].chegada.hh, tarefas[prioridade_max].chegada.mm, tarefas[prioridade_max].chegada.ss, tarefas[prioridade_max].desc);
@@ -123,6 +141,8 @@ void alterar_prior(celula tarefas[], int anterior, int novo)
 
 void alterar_tempo(celula tarefas[], tempo anterior, tempo novo)
 {
+    int tempo_anterior = conversor_tempo(anterior);
+    int tempo_novo = conversor_tempo(novo);
     //inserir código para mudar processo com tempo aqui
 }
 
