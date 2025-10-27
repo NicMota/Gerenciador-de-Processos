@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #define MAX_DESC 50
+#define MAX_PRIOR 100
 
 
 typedef struct {
@@ -16,16 +17,32 @@ typedef struct {
 } celula;
 
 
-celula tarefas[100]; // vetor global de tarefas em ordem de prioridade
-celula *tarefas_tempo; // vetor global de tarefas em ordem de tempo
+int prioridades[MAX_PRIOR] = {}; //vetor de marcação de quais prioridades estão sendo utilizadas
 
 int conversor_tempo(tempo t)
 {
     return t.hh*3600 + t.mm*60 + t.ss;
 }
 
+void ordenar_prior(celula tarefas[]) //hash sort
+{
+    celula novo_tarefas[MAX_PRIOR];
+    for (int i = 0; i < MAX_PRIOR; i++)
+    {
+        //copiar a tarefa para o índice correspondente à sua prioridade
+        novo_tarefas[tarefas[i].prior] = tarefas[i];
+        //marcar que a prioridade está sendo usada no mapa
+        prioridades[tarefas[i].prior] = 1;
+    }
+    tarefas = novo_tarefas;
+}
 
-void add(celula tarefa)
+void ordenar_tempo()
+{
+    //decidir qual sort usar
+}
+
+void add(celula tarefas[], celula tarefa)
 {
     scanf("%d", &tarefa.prior);
     scanf("%d:%d:%d", &tarefa.chegada.hh, &tarefa.chegada.mm, &tarefa.chegada.ss);
@@ -36,7 +53,7 @@ void add(celula tarefa)
 
 
 
-void exec(char opcao)
+void exec(celula tarefas[], char opcao)
 {
     switch (opcao)
     {
@@ -60,7 +77,7 @@ void exec(char opcao)
     }
 }
 
-void next(char opcao)
+void next(celula tarefas[], char opcao)
 {
     switch (opcao)
     {
@@ -95,7 +112,7 @@ void next(char opcao)
     }
 }
 
-void alterar_prior(int anterior, int novo)
+void alterar_prior(celula tarefas[], int anterior, int novo)
 {
     //inserir código para mudar processo com prioridade aqui
     // ex: troca de anterior=88 para novo=22...
@@ -104,12 +121,12 @@ void alterar_prior(int anterior, int novo)
     tarefas[novo].prior = novo;
 }
 
-void alterar_tempo(tempo anterior, tempo novo)
+void alterar_tempo(celula tarefas[], tempo anterior, tempo novo)
 {
     //inserir código para mudar processo com tempo aqui
 }
 
-void print(char opcao)
+void print(celula tarefas[], char opcao)
 {
     switch (opcao)
     {
@@ -141,6 +158,7 @@ void print(char opcao)
 
 int main()
 {
+    celula tarefas[MAX_PRIOR]; // vetor principal de tarefas
 
     char* cmd;
     scanf("%s",cmd);
