@@ -17,8 +17,8 @@ typedef struct {
 } celula;
 
 int qtd; //quantidade atual de tarefas
-int prioridades[MAX_PRIOR] = {}; //vetor de marcação de quais prioridades estão sendo utilizadas
-int flag; // 1 - a lista está ordenada por prioridade (com hashing); 0 - a lista está ordenada por tempo
+int prioridades[MAX_PRIOR] = {0}; //vetor de marcação de quais prioridades estão sendo utilizadas
+int flag = 1; // 1 - a lista está ordenada por prioridade (com hashing); 0 - a lista está ordenada por tempo
 
 int conversor_tempo(tempo t)
 {
@@ -28,40 +28,86 @@ int conversor_tempo(tempo t)
 void hash_prior(celula tarefas[]) //hashing
 {
     if (flag) return;
-    celula novo_tarefas[MAX_PRIOR];
-    for (int i = 0; i < MAX_PRIOR; i++)
-    {
-        //copiar a tarefa para o índice correspondente à sua prioridade
-        novo_tarefas[tarefas[i].prior] = tarefas[i];
+    celula novo_tarefas[MAX_PRIOR] = {0};
+
+    //copiar a tarefa para o índice correspondente à sua prioridade
+    for (int i = 0; i < MAX_PRIOR; i++) {
+        if (tarefas[i].prior > 0 && tarefas[i].prior < MAX_PRIOR)
+            novo_tarefas[tarefas[i].prior] = tarefas[i];
     }
-    tarefas = novo_tarefas;
+    //copiar o vetor novo para o antigo
+    for (int i = 0; i < MAX_PRIOR; i++) {
+        tarefas[i] = novo_tarefas[i];
+    }
+
     flag = 1;
     return;
 }
 
-void ordenar_tempo()
+void compactar(celula tarefas[])
+{
+    qtd = 0;
+    for (int i = 0; i < MAX_PRIOR; i++) {
+        if (prioridades[i])
+            tarefas[qtd++] = tarefas[i];
+    }
+    return;
+}
+
+void particao(celula vet[], int esq, int dir, int *i, int *j)
+{
+    *i = esq; *j = dir;
+    celula pivo = vet[(*i + *j) / 2];
+    celula aux;
+    do {
+        while (conversor_tempo(vet[*i].chegada) < conversor_tempo(pivo.chegada)) (*i)++;
+        while (conversor_tempo(vet[*j].chegada) > conversor_tempo(pivo.chegada)) (*j)--;
+        if (*i < *j) {
+            aux = vet[*i];
+            vet[*i] = vet[*j];
+            vet[*j] = aux;
+        }
+    } while (*i < *j);
+}
+
+void quicksort(celula compactado[], int ini, int fim) //quicksort precisa receber tarefas COMPACTADAS
+{
+    int i, j;
+    particao(compactado, ini, fim, &i, &j);
+    if (ini < j)
+        quicksort(compactado, ini, j);
+    if (i < fim)
+        quicksort(compactado, i, fim);
+
+    return;
+}
+
+void ordenar_tempo(celula tarefas[])
 {
     if (!flag) return;
     
-    //decidir qual sort usar
+    compactar(tarefas);
+    quicksort(tarefas, 0, qtd-1);
 
     flag = 0;
     return;
 }
 
-void add(celula tarefas[], celula tarefa)
+void add(celula tarefas[])
 {
     if (qtd >= 99) {printf("Limite de tarefas atingido!\n"); return;}
+    celula tarefa;
     do {
         scanf("%d", &tarefa.prior);
         if (prioridades[tarefa.prior])
             printf("Essa prioridade já está sendo usada! As pioridades das tarefas devem ser únicas.\nPor favor, insira outro índice de prioridade: ");
         else {
             prioridades[tarefa.prior] = 1;
+            break;
         }
-    } while (prioridades[tarefa.prior] == 0);
+    } while (prioridades[tarefa.prior]);
     scanf("%d:%d:%d", &tarefa.chegada.hh, &tarefa.chegada.mm, &tarefa.chegada.ss);
-    scanf("%s", &tarefa.desc);
+    scanf("%s", tarefa.desc);
 
     if (flag) //se está ordenada por prioridade
         tarefas[tarefa.prior] = tarefa;
@@ -83,6 +129,9 @@ void exec(celula tarefas[], char opcao)
             while (!prioridades[prioridade_max]) prioridade_max--;
 
             prioridades[prioridade_max] = 0; //torna a tarefa invisível
+            // limpa a célula
+            tarefas[prioridade_max].desc[0] = '\0'; 
+            tarefas[prioridade_max].prior = 0;
             break;
         }
 
@@ -111,10 +160,10 @@ void next(celula tarefas[], char opcao)
             //mostrar processo com maior prioridade aqui
             int prioridade_max = 99;
             while (!prioridades[prioridade_max]) prioridade_max--;
-            hash_prior(tarefas);
-            printf("%d %d:%d:%d %s", tarefas[prioridade_max].prior, tarefas[prioridade_max].chegada.hh, tarefas[prioridade_max].chegada.mm, tarefas[prioridade_max].chegada.ss, tarefas[prioridade_max].desc);
-            printf("\n\n");
-
+            if (prioridade_max > 0) {
+                hash_prior(tarefas);
+                printf("%02d %02d:%02d:%02d %s\n\n", tarefas[prioridade_max].prior, tarefas[prioridade_max].chegada.hh, tarefas[prioridade_max].chegada.mm, tarefas[prioridade_max].chegada.ss, tarefas[prioridade_max].desc);
+            }
             break;
         }
 
@@ -134,11 +183,14 @@ void next(celula tarefas[], char opcao)
 
 void alterar_prior(celula tarefas[], int anterior, int novo)
 {
-    //inserir código para mudar processo com prioridade aqui
-    // ex: troca de anterior=88 para novo=22...
+    hash_prior(tarefas); //garantir que está ordenado por prioridade
     tarefas[novo] = tarefas[anterior];
-    tarefas[anterior].desc[0] = '\0';
+    tarefas[anterior].desc[0] = '\0'; //limpa a célula
+    tarefas[anterior].prior = 0;
     tarefas[novo].prior = novo;
+
+    prioridades[anterior] = 0;
+    prioridades[novo] = 1;
 }
 
 void alterar_tempo(celula tarefas[], tempo anterior, tempo novo)
@@ -153,11 +205,11 @@ void print(celula tarefas[], char opcao)
         case 'p':
         {
             //inserir código para imprimir processos por prioridade aqui
-            for(int i = 99; i >= 0; i--){
-                if(tarefas[i].desc[0] != '\0'){
-                    printf("%d %d:%d:%d %s", tarefas[i].prior, tarefas[i].chegada.hh, tarefas[i].chegada.mm, tarefas[i].chegada.ss, tarefas[i].desc);
-                    printf("\n\n");
-                }
+            hash_prior(tarefas);
+            for(int i = 99; i >= 1; i--){
+                if(prioridades[i])
+                    printf("%02d %02d:%02d:%02d %s\n", tarefas[i].prior, tarefas[i].chegada.hh, tarefas[i].chegada.mm, tarefas[i].chegada.ss, tarefas[i].desc);
+                printf("\n");
             }
             break;
         }
@@ -180,16 +232,14 @@ int main()
 {
     celula tarefas[MAX_PRIOR] = {}; // vetor principal de tarefas
     qtd = 0;
-
-    char* cmd;
-    scanf("%s",cmd);
-
     
+    char cmd[20];
     do{
+        scanf("%s",cmd);
         //adiciona um processo(celula) a lista de processos
         if(strcmp(cmd,"add") == 0)
         {
-            
+            add(tarefas);
         }
 
         /*executa um processo
@@ -198,7 +248,9 @@ int main()
         */
         if(strcmp(cmd,"exec") == 0)
         {
-
+            char opc;
+            scanf(" -%c", &opc);
+            exec(tarefas, opc);
         }
 
         /*  mostra um processo
@@ -207,7 +259,9 @@ int main()
         */
         if(strcmp(cmd,"next") == 0)
         {
-
+            char opc;
+            scanf(" -%c", &opc);
+            next(tarefas, opc);
         }
         
         /*  modifica informacoes de um processo
@@ -216,7 +270,28 @@ int main()
         */
         if(strcmp(cmd,"change") == 0)
         {
+            char opc;
+            scanf(" -%c", &opc);
 
+            switch (opc)
+            {
+                case 'p': 
+                {
+                    int anterior, novo;
+                    scanf(" %d|%d", &anterior, &novo);
+                    alterar_prior(tarefas, anterior, novo);
+                    break;
+                }
+                case 't':
+                {
+                    break;
+                }
+                default: printf(
+                "Por favor, escolha uma opção válida!\n"
+                "-p: imprimir os processor em ordem decrescente de prioridade\n"
+                "-t: imprimir os processor em ordem crescente de horários\n"
+                );
+            }
         }
 
         /*  imprime todos os processos a serem executados 
@@ -228,11 +303,11 @@ int main()
         */
         if(strcmp(cmd,"print") == 0)
         {
-
+            char opc;
+            scanf(" -%c", &opc);
+            print(tarefas, opc);
         }
-    }while(strcmp(cmd, "quit") != 0);
+    } while(strcmp(cmd, "quit") != 0);
 
-
+    return 0;
 }
-
-
