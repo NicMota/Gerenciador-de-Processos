@@ -18,8 +18,7 @@ typedef struct {
 
 int qtd; //quantidade atual de tarefas
 int prioridades[MAX_PRIOR] = {0}; //vetor de marcação de quais prioridades estão sendo utilizadas
-int flag = 1; // 1 - a lista está ordenada por prioridade (com hashing); 0 - a lista está ordenada por tempo
-
+int flag = 1; // 1 - a lista está ordenada por prioridade (com hashing); 0 - a lista está ordenada por tempo; -1 - está ocupando as qtd primeiras posições, mas a ordem por tempo não está correta (algo deturpou ela)
 
 int conversor_tempo(tempo t)
 {
@@ -48,14 +47,12 @@ int binary_search_tempo(celula tarefas[], long long tempo_segundos, int ini, int
     return binary_search_tempo(tarefas, tempo_segundos, meio + 1, fim); // Busca na metade direita
 }
 
-
 void hash_prior(celula tarefas[]) //hashing
 {
-    if (flag) return;
+    if (flag == 1) return;
     celula novo_tarefas[MAX_PRIOR] = {0};
 
     //copiar a tarefa para o índice correspondente à sua prioridade
-    // ***** CORREÇÃO: Loop deve ir até 'qtd', não 'MAX_PRIOR' *****
     for (int i = 0; i < qtd; i++) {
         if (tarefas[i].prior > 0 && tarefas[i].prior < MAX_PRIOR)
             novo_tarefas[tarefas[i].prior] = tarefas[i];
@@ -87,7 +84,6 @@ void particao(celula vet[], int esq, int dir, int *i, int *j)
     do {
         while (conversor_tempo(vet[*i].chegada) < conversor_tempo(pivo.chegada)) (*i)++;
         while (conversor_tempo(vet[*j].chegada) > conversor_tempo(pivo.chegada)) (*j)--;
-        // ***** CORREÇÃO: Deve ser <= e incrementar/decrementar i/j *****
         if (*i <= *j) {
             aux = vet[*i];
             vet[*i] = vet[*j];
@@ -95,13 +91,13 @@ void particao(celula vet[], int esq, int dir, int *i, int *j)
             (*i)++;
             (*j)--;
         }
-    } while (*i <= *j);     // ***** CORREÇÃO: Condição deve ser <= *****
-}
+    } while (*i <= *j);
 }
 
 void quicksort(celula compactado[], int ini, int fim) //quicksort precisa receber tarefas COMPACTADAS
 {
-    if (ini >= fim) return; // Condição de parada
+    if (ini >= fim) return;
+
     int i, j;
     particao(compactado, ini, fim, &i, &j);
     if (ini < j)
@@ -112,11 +108,11 @@ void quicksort(celula compactado[], int ini, int fim) //quicksort precisa recebe
     return;
 }
 
-void ordenar_tempo(celula tarefas[])
+void ordenar_tempo(celula tarefas[]) //usando quicksort
 {
-    if (!flag) return;
-    
-    compactar(tarefas);
+    if (flag == 0) return;
+
+    if (flag == 1) compactar(tarefas); //se o vetor está com hash de prioridade, precisamos compactá-lo
     quicksort(tarefas, 0, qtd-1);
 
     flag = 0;
@@ -141,9 +137,10 @@ void add(celula tarefas[])
 
     if (flag) //se está ordenada por prioridade
         tarefas[tarefa.prior] = tarefa;
-    else //se está ordenada por tempo
+    else { //se está ordenada por tempo
         tarefas[qtd] = tarefa;
-        flag = 1; // A ordenação por tempo agora é inválida!
+        flag = -1; //deixou de estar ordenado, mas ainda está compactado
+    }
     qtd++;
     return;
 }
@@ -170,25 +167,14 @@ void exec(celula tarefas[], char opcao)
 
         case 't':
         {
-            // Garante que estamos no modo tempo
-            ordenar_tempo(tarefas); 
-            
-            // A tarefa com menor tempo está no índice 0
+            ordenar_tempo(tarefas);
             if (qtd == 0) return; // Checagem extra caso compactar/ordenar esvazie
-            
-            int prioridade_removida = tarefas[0].prior;
-            prioridades[prioridade_removida] = 0; // Libera a prioridade
-
-            // Move todos os elementos uma posição para a esquerda
-            for (int i = 0; i < qtd - 1; i++) {
+            prioridades[tarefas[0].prior] = 0;
+            //deslocar todos os elementos para a posição anterior, sobrescrevendo o primeiro (menor tempo)
+            for (int i = 0; i < qtd-1; i++) {
                 tarefas[i] = tarefas[i+1];
             }
-
-            // Limpa a última posição
-            tarefas[qtd-1].prior = 0;
-            tarefas[qtd-1].desc[0] = '\0';
-            
-            qtd--; // Reduz a contagem
+            qtd--;
             break;
         }
 
@@ -203,6 +189,7 @@ void exec(celula tarefas[], char opcao)
 
 void next(celula tarefas[], char opcao)
 {
+    if (qtd == 0) return; //não há tarefa para mostrar
     switch (opcao)
     {
         case 'p':
@@ -220,9 +207,8 @@ void next(celula tarefas[], char opcao)
         case 't':
         {
             ordenar_tempo(tarefas);
-            if (qtd > 0) {
+            if (qtd > 0)
                 printf("%02d %02d:%02d:%02d %s\n\n", tarefas[0].prior, tarefas[0].chegada.hh, tarefas[0].chegada.mm, tarefas[0].chegada.ss, tarefas[0].desc);
-            }
             break;
         }
 
@@ -248,25 +234,21 @@ void alterar_prior(celula tarefas[], int anterior, int novo)
 
 void alterar_tempo(celula tarefas[], tempo anterior, tempo novo)
 {
-    // 1. Garantir que a lista está ordenada por tempo para a busca binária
     ordenar_tempo(tarefas);
-
-    // 2. Converter o tempo 'anterior' para segundos para buscar
+    // Converter o tempo 'anterior' para segundos para buscar
     long long tempo_antigo_seg = conversor_tempo(anterior);
-
-    // 3. Usar busca binária para encontrar o índice da tarefa
+    // Usar busca binária para encontrar o índice da tarefa
     int indice = binary_search_tempo(tarefas, tempo_antigo_seg, 0, qtd - 1);
 
     if (indice != -1) {
-        // 4. Encontrou a tarefa, agora atualiza o tempo
+        // Encontrou a tarefa, agora atualiza o tempo
         tarefas[indice].chegada = novo;
-
-        // 5. A alteração pode ter quebrado a ordenação.
+        // A alteração pode ter quebrado a ordenação.
         // Forçamos a re-ordenar na proxima chamada de tempo.
-        flag = 1; // Invalida a ordenação por tempo (seta para modo prioridade)
+        flag = -1; // Invalida a ordenação por tempo (seta para modo prioridade)
                  // A proxima chamada a ordenar_tempo() vai refazer o quicksort.
     } else {
-        // printf("Erro: Tarefa com tempo %02d:%02d:%02d não encontrada.\n", anterior.hh, anterior.mm, anterior.ss);
+        printf("Erro: Tarefa com tempo %02d:%02d:%02d não encontrada.\n", anterior.hh, anterior.mm, anterior.ss);
     }
 }
 
@@ -276,23 +258,23 @@ void print(celula tarefas[], char opcao)
     {
         case 'p':
         {
-            //inserir código para imprimir processos por prioridade aqui
+            //imprimir processos por prioridade em ordem decrescente
             hash_prior(tarefas);
             for(int i = 99; i >= 1; i--){
                 if(prioridades[i])
                     printf("%02d %02d:%02d:%02d %s\n", tarefas[i].prior, tarefas[i].chegada.hh, tarefas[i].chegada.mm, tarefas[i].chegada.ss, tarefas[i].desc);
-                printf("\n");
             }
+            printf("\n");
             break;
         }
 
         case 't':
         {
+            //imprimir processos por tempo em ordem crescente
             ordenar_tempo(tarefas);
-            for(int i = 0; i < qtd; i++){
+            for (int i = 0; i < qtd; i++)
                 printf("%02d %02d:%02d:%02d %s\n", tarefas[i].prior, tarefas[i].chegada.hh, tarefas[i].chegada.mm, tarefas[i].chegada.ss, tarefas[i].desc);
-            }
-            printf("\n"); [cite_start]// Linha em branco no final, como pedido [cite: 56]
+            printf("\n");
             break;
         }
 
@@ -359,15 +341,15 @@ int main()
                     break;
                 }
                case 't':
-                  {
-                      tempo anterior, novo;
-                      // Formato de leitura: hh:mm:ss|hh:mm:ss
-                      scanf(" %d:%d:%d|%d:%d:%d", 
-                            &anterior.hh, &anterior.mm, &anterior.ss,
-                            &novo.hh, &novo.mm, &novo.ss);
-                      alterar_tempo(tarefas, anterior, novo);
-                      break;
-                  }
+                {
+                    tempo anterior, novo;
+                    // Formato de leitura: hh:mm:ss|hh:mm:ss
+                    scanf(" %d:%d:%d|%d:%d:%d", 
+                        &anterior.hh, &anterior.mm, &anterior.ss,
+                        &novo.hh, &novo.mm, &novo.ss);
+                    alterar_tempo(tarefas, anterior, novo);
+                    break;
+                }
                 default: printf(
                 "Por favor, escolha uma opção válida!\n"
                 "-p: imprimir os processor em ordem decrescente de prioridade\n"
